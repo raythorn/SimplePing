@@ -6,6 +6,7 @@
 #define _SIMPLEPINGWRAPPER_H
 
 #include <string>
+#include <pthread.h>
 
 #include "SimplePing.h"
 
@@ -14,13 +15,14 @@ public:
     SimplePingWrapper();
     ~SimplePingWrapper();
 
-    static void ping(std::string host, int count, int timeout);
+    static SimplePingWrapper *sharedInstance();
+    void ping(std::string host, int count);
 
-    virtual void simplePingMessage(int state, std::string message);
-    virtual void simplePingResult(ping_result_t *result);
-    virtual void simplePingFail(int code, std::string error);
+    virtual void simplePing(int state, std::string message);
 private:
-    static SimplePing *pinger;
+    SimplePing *pinger;
+    static SimplePingWrapper *instance;
+    static pthread_mutex_t mutex;
 };
 
 

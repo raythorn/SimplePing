@@ -1,5 +1,8 @@
 package com.raythorn.simpleping;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 /**
  * Created by Derek Ray on 2017/12/30.
  */
@@ -11,37 +14,72 @@ public class SimplePing {
         System.loadLibrary("SimplePing");
     }
 
-    /**
-     * A native method that is implemented by the 'SimplePing' native library,
-     * which is packaged with this application.
-     */
-    public native void ping(String host, int count, int timeout);
-    private static SimplePingDelegate delegate = null;
-    public static void init(SimplePingDelegate delegate) {
-        SimplePing.delegate = delegate;
+    private SimplePingDelegate delegate = null;
+    private SimplePingResult result = new SimplePingResult();
+
+    public final static int SPNS_ERROR          = -1;
+    public final static int SPNS_DNSUNREACH     = -2;
+    public final static int SPNS_HOSTUNREACH    = -3;
+    public final static int SPNS_HOSTDOWN       = -4;
+    public final static int SPNS_HOSTNOTFOUND   = -5;
+    public final static int SPNS_NETUNREACH     = -6;
+    public final static int SPNS_NETDOWN        = -7;
+    public final static int SPNS_TIMEOUT        = -8;
+    public final static int SPNS_NOMEM          = -9;
+    public final static int SPNS_IO             = -10;
+    public final static int SPNS_OK             = 0;
+    public final static int SPNS_PINGINIT       = 1;
+    public final static int SPNS_PING           = 2;
+    public final static int SPNS_PINGSTATISTIC  = 3;
+    public final static int SPNS_PINGRESULT     = 4;
+
+    public void init(SimplePingDelegate delegate) {
+        this.delegate = delegate;
     }
 
-    public static void simplePingMessage(int state, String message) {
+    public void simplePing(int state, String message) {
+
+        if (state == SPNS_PINGRESULT) {
+            result.parse(message);
+        }
+
         if (null != delegate) {
-            delegate.simplePingMessage(state, message);
+            delegate.simplePing(state, message);
         }
     }
 
-    public static void simplePingResult() {
-        if (null != delegate) {
-            delegate.simplePingResult();
-        }
-    }
+    public class SimplePingResult {
+        public int state = 0;
+        public int send = 0;
+        public int recv = 0;
+        public int maxrtt = 0;
+        public int minrtt = 0;
+        public int avgrtt = 0;
+        public float loss = 0;
 
-    public static void simplePingFail(int code, String error) {
-        if (null != delegate) {
-            delegate.simplePingFail(code, error);
+        public void parse(String result) {
+            try {
+                JSONObject json = new JSONObject(result);
+                state = json.getInt("state");
+                send = json.getInt("send");
+                recv = json.getInt("recv");
+                maxrtt = json.getInt("maxrtt");
+                minrtt = json.getInt("minrtt");
+                avgrtt = json.getInt("avgrtt");
+                loss = (float) json.getDouble("loss");
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
         }
     }
 
     public interface SimplePingDelegate {
-        void simplePingMessage(int state, String message);
-        void simplePingResult();
-        void simplePingFail(int code, String error);
+        void simplePing(int state, String message);
     }
+
+    /**
+     * A native method that is implemented by the 'SimplePing' native library,
+     * which is packaged with this application.
+     */
+    public native void ping(String host, int count);
 }

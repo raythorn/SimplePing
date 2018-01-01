@@ -3,41 +3,49 @@
 //
 
 #include "SimplePingWrapper.h"
-#include "../android/app/src/main/cpp/SimplePingJni.h"
-
 using namespace std;
 
-SimplePing SimplePingWrapper::pinger;
+SimplePingWrapper *SimplePingWrapper::instance;
+pthread_mutex_t SimplePingWrapper::mutex;
 
 SimplePingWrapper::SimplePingWrapper()
 {
     pinger = nullptr;
+    instance = nullptr;
+    mutex = PTHREAD_MUTEX_INITIALIZER;
 }
 
 SimplePingWrapper::~SimplePingWrapper()
 {
+    if (pinger) delete pinger;
+    pinger = nullptr;
 }
 
-void SimplePingWrapper::ping(string host, int count, int timeout)
+SimplePingWrapper* SimplePingWrapper::sharedInstance()
 {
-    if (nullptr == pinger) {
-        pinger = new SimplePing;
+    if (nullptr == instance) {
+        pthread_mutex_lock(&mutex);
+        if (nullptr == instance) {
+            instance = new SimplePingWrapper;
+        }
+        pthread_mutex_unlock(&mutex);
     }
 
-    pinger->ping(host, count, timeout);
+    return instance;
 }
 
-void SimplePingWrapper::simplePingMessage(int state, string message)
+void SimplePingWrapper::ping(string host, int count)
 {
-    _simplePingMessage(state, message);
+    if (nullptr == pinger) {
+        pinger = new SimplePing();
+        pinger->setDelegate(this);
+    }
+
+    pinger->ping(host, count);
 }
 
-void SimplePingWrapper::simplePingResult(ping_result_t *result)
+void SimplePingWrapper::simplePing(int state, string message)
 {
-    _simplePingResult();
-}
-
-void SimplePingWrapper::simplePingFail(int code, string error)
-{
-    _simplePingFail(code, error);
+    extern void _simplePing(int, string);
+    _simplePing(state, message);
 }

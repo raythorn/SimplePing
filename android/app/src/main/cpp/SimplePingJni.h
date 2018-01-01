@@ -7,8 +7,6 @@
 
 #include <string>
 
-void _simplePingMessage(int state, std::string message);
-void _simplePingResult();
-void _simplePingFail(int code, std::string error);
+void _simplePing(int state, std::string message);
 
 #endif //_SIMPLEPINGJNI_H
