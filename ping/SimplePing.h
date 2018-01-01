@@ -150,4 +150,4 @@ private:
 	SimplePingDelegate *delegate;
 };
 
-#endif //__LJ_SIMPLEPING_H
+#endif //__SIMPLEPING_H
