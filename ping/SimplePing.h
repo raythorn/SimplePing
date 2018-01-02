@@ -6,7 +6,6 @@
 #include <string>
 #include <vector>
 #include <map>
-#include <netinet/in.h>
 #include <string.h>
 
 #define SP_FREE(ptr) {if(ptr) free(ptr); ptr = nullptr;}
@@ -85,7 +84,11 @@ public:
 	uint32_t	ip; 		//IP in bytes
 	uint8_t		ttl;		//TTL
 	uint16_t	count;		//Total icmp packets requested to send
+#ifdef WIN32
+	HANDLE		socket;
+#else
     int         socket;
+#endif
     int         seq;
 	SimplePing*	pinger;		//SimplePing instance
 };
@@ -128,12 +131,16 @@ public:
 	inline void setDelegate(SimplePingDelegate *_delegate) { delegate = _delegate; }
 	std::string stringfyResult(PingResult *result);
 protected:
-	int opensocket();
+	bool opensocket(void *sock);
 	void closesocket();
+#ifdef WIN32
+	bool icmp_ping();
+#else
 	void icmp_pack(icmphdr_t *icmphdr, int seq);
 	int icmp_unpack(const char *data, int length);
     bool icmp_send();
     bool icmp_recv();
+#endif
     void icmp_statistic();
 	uint16_t checksum(uint16_t *data, int length);
     uint64_t timestamp();
